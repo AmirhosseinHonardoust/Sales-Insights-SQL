@@ -2,7 +2,7 @@
 
 Analyze a retail sales dataset using **SQL (SQLite)** for data aggregation and **Python** for visualization.  
 This project demonstrates how to move from raw transactional data → structured SQL database → actionable business insights with clear visuals.
-
+ 
 ---
 
 ## Project Overview
