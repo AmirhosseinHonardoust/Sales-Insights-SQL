@@ -45,7 +45,7 @@ def load_csv_to_db(csv_path: str | Path, db_path: str | Path) -> None:
     if not csv_path.is_file():
         raise FileNotFoundError(f"CSV not found: {csv_path}")
 
-    df = pd.read_csv(csv_path, parse_dates=["date"])
+    df = pd.read_csv(csv_path)
 
     missing = REQUIRED_COLUMNS - set(df.columns)
     if missing:
@@ -59,7 +59,15 @@ def load_csv_to_db(csv_path: str | Path, db_path: str | Path) -> None:
     if "revenue" not in df.columns:
         df["revenue"] = df["quantity"] * df["unit_price"]
 
-    df["date"] = df["date"].dt.strftime("%Y-%m-%d")
+    # Parse explicitly (rather than via read_csv's parse_dates) so a bad value
+    # is reported as a clear ValueError instead of silently leaving the column
+    # as text, which used to crash later with a confusing AttributeError on
+    # the .dt accessor.
+    parsed_dates = pd.to_datetime(df["date"], errors="coerce")
+    if parsed_dates.isna().any():
+        bad_rows = df.index[parsed_dates.isna()].tolist()
+        raise ValueError(f"CSV {csv_path} has unparseable 'date' values at row(s): {bad_rows}")
+    df["date"] = parsed_dates.dt.strftime("%Y-%m-%d")
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as con:
@@ -80,5 +88,5 @@ def main() -> None:
     logger.info("Loaded %s → %s (table: sales)", args.csv, args.db)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

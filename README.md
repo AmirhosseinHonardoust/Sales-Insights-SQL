@@ -1,5 +1,8 @@
 # Sales Insights with SQL and Python
 
+[![CI](https://github.com/AmirhosseinHonardoust/Sales-Insights-SQL/actions/workflows/ci.yml/badge.svg)](https://github.com/AmirhosseinHonardoust/Sales-Insights-SQL/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Analyze a retail sales dataset using **SQL (SQLite)** for data aggregation and **Python** for visualization.  
 This project demonstrates how to move from raw transactional data → structured SQL database → actionable business insights with clear visuals.
 
@@ -85,6 +88,9 @@ source .venv/bin/activate
 
 pip install -r requirements.txt
 ```
+
+(For development — linting, type-checking, tests — use
+`pip install -r requirements-dev.txt` instead; see [CONTRIBUTING.md](CONTRIBUTING.md).)
 
 ### Create SQLite Database
 
