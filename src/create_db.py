@@ -51,6 +51,11 @@ def load_csv_to_db(csv_path: str | Path, db_path: str | Path) -> None:
     if missing:
         raise ValueError(f"CSV {csv_path} is missing required column(s): {sorted(missing)}")
 
+    for col in ("quantity", "unit_price"):
+        if (df[col] < 0).any():
+            bad_rows = df.index[df[col] < 0].tolist()
+            raise ValueError(f"CSV {csv_path} has negative '{col}' values at row(s): {bad_rows}")
+
     if "revenue" not in df.columns:
         df["revenue"] = df["quantity"] * df["unit_price"]
 

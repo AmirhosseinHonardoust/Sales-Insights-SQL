@@ -42,3 +42,20 @@ def test_load_csv_to_db_missing_column_raises(tmp_path: Path) -> None:
     pd.DataFrame({"order_id": [1], "date": ["2024-01-01"]}).to_csv(bad_csv, index=False)
     with pytest.raises(ValueError, match="missing required column"):
         load_csv_to_db(bad_csv, tmp_path / "sales.db")
+
+
+@pytest.mark.parametrize("bad_col", ["quantity", "unit_price"])
+def test_load_csv_to_db_negative_values_raise(tmp_path: Path, bad_col: str) -> None:
+    row = {
+        "order_id": [1],
+        "date": ["2024-01-01"],
+        "region": ["North"],
+        "product": ["Widget"],
+        "quantity": [2],
+        "unit_price": [10.0],
+    }
+    row[bad_col] = [-1]
+    bad_csv = tmp_path / "negative.csv"
+    pd.DataFrame(row).to_csv(bad_csv, index=False)
+    with pytest.raises(ValueError, match=f"negative '{bad_col}'"):
+        load_csv_to_db(bad_csv, tmp_path / "sales.db")
