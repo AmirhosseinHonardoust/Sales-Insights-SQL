@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Tooling caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Generated at runtime (regenerate with src/create_db.py and src/analyze_sales.py)
+sales.db
+outputs/*.csv
+outputs/charts/*.png
+!outputs/.gitkeep
+!outputs/charts/.gitkeep
