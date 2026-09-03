@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import matplotlib
@@ -9,9 +8,10 @@ import pytest
 
 matplotlib.use("Agg")  # headless-safe backend for tests
 
-SRC = Path(__file__).resolve().parents[1] / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
+# create_db / analyze_sales / utils are importable as top-level modules because
+# the project is installed in editable mode (see `-e .` in requirements-dev.txt
+# and the [tool.setuptools] package-dir mapping in pyproject.toml) rather than
+# via a sys.path hack.
 
 # Small, hand-checkable dataset:
 # - order 1 has two line items in North (tests COUNT(DISTINCT order_id))

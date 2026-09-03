@@ -125,5 +125,5 @@ def main() -> None:
     logger.info("Artifacts saved to: %s", Path(args.outdir).resolve())
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

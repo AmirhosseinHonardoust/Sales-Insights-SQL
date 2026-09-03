@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
-from analyze_sales import parse_statements, run_queries
+from analyze_sales import main, parse_args, parse_statements, run_queries
 from create_db import load_csv_to_db
 
 QUERIES_SQL = """
@@ -94,6 +95,79 @@ def test_run_queries_missing_db_raises(tmp_path: Path) -> None:
     sql_file.write_text(QUERIES_SQL)
     with pytest.raises(FileNotFoundError):
         run_queries(tmp_path / "no.db", sql_file, tmp_path / "outputs")
+
+
+def test_run_queries_missing_sql_file_raises(db_path: Path, tmp_path: Path) -> None:
+    with pytest.raises(FileNotFoundError, match="SQL file not found"):
+        run_queries(db_path, tmp_path / "no.sql", tmp_path / "outputs")
+
+
+def test_run_queries_no_statements_raises(db_path: Path, tmp_path: Path) -> None:
+    sql_file = tmp_path / "empty.sql"
+    sql_file.write_text("   \n  ;  \n")
+    with pytest.raises(ValueError, match="No SQL statements found"):
+        run_queries(db_path, sql_file, tmp_path / "outputs")
+
+
+def test_run_queries_skips_chart_for_label_not_in_config(db_path: Path, tmp_path: Path) -> None:
+    """A labeled query outside CHART_CONFIG (e.g. top_products_by_revenue) gets
+    a CSV but no chart, and an empty result set is skipped too."""
+    sql_file = tmp_path / "queries.sql"
+    sql_file.write_text("""
+-- name: top_products_by_revenue
+SELECT product, ROUND(SUM(revenue), 2) AS total_revenue
+FROM sales GROUP BY product ORDER BY total_revenue DESC;
+
+-- name: no_rows
+SELECT product, revenue FROM sales WHERE 1 = 0;
+""")
+    outdir = tmp_path / "outputs"
+
+    run_queries(db_path, sql_file, outdir)
+
+    assert (outdir / "top_products_by_revenue.csv").is_file()
+    assert not (outdir / "charts" / "top_products_by_revenue.png").exists()
+    assert (outdir / "no_rows.csv").is_file()
+    assert not (outdir / "charts" / "no_rows.png").exists()
+
+
+def test_run_queries_warns_and_skips_chart_on_column_mismatch(
+    db_path: Path, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A labeled query in CHART_CONFIG whose result is missing the expected
+    x/y columns logs a warning and skips the chart instead of crashing."""
+    sql_file = tmp_path / "queries.sql"
+    sql_file.write_text("""
+-- name: revenue_by_region
+SELECT region AS not_region, revenue AS not_total_revenue FROM sales LIMIT 1;
+""")
+    outdir = tmp_path / "outputs"
+
+    with caplog.at_level(logging.WARNING):
+        run_queries(db_path, sql_file, outdir)
+
+    assert "Skipping chart for revenue_by_region" in caplog.text
+    assert not (outdir / "charts" / "revenue_by_region.png").exists()
+
+
+def test_parse_args_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("sys.argv", ["analyze_sales.py"])
+    args = parse_args()
+    assert args.db == "sales.db"
+    assert args.sql == "src/queries.sql"
+    assert args.outdir == "outputs"
+
+
+def test_main_runs_queries(monkeypatch: pytest.MonkeyPatch, db_path: Path, tmp_path: Path) -> None:
+    sql_file = tmp_path / "queries.sql"
+    sql_file.write_text(QUERIES_SQL)
+    outdir = tmp_path / "outputs"
+    monkeypatch.setattr(
+        "sys.argv",
+        ["analyze_sales.py", "--db", str(db_path), "--sql", str(sql_file), "--outdir", str(outdir)],
+    )
+    main()
+    assert (outdir / "revenue_by_region.csv").is_file()
 
 
 def test_monthly_trend_chart_uses_date_axis_not_categorical(
