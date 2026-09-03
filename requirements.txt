@@ -1,2 +1,2 @@
-pandas>=2.0
-matplotlib>=3.7
+pandas==3.0.5
+matplotlib==3.11.1

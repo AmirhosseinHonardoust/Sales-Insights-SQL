@@ -1,6 +1,7 @@
 -r requirements.txt
-ruff>=0.6
-black>=24.0
-mypy>=1.10
-pandas-stubs>=2.0
-pytest>=8.0
+ruff==0.16.6
+black==26.5.1
+mypy==2.3.1
+pandas-stubs==3.0.5.260730
+pytest==9.1.1
+pytest-cov==7.1.0

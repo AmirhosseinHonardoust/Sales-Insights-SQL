@@ -94,3 +94,20 @@ def test_run_queries_missing_db_raises(tmp_path: Path) -> None:
     sql_file.write_text(QUERIES_SQL)
     with pytest.raises(FileNotFoundError):
         run_queries(tmp_path / "no.db", sql_file, tmp_path / "outputs")
+
+
+def test_monthly_trend_chart_uses_date_axis_not_categorical(
+    db_path: Path, tmp_path: Path, recwarn: pytest.WarningsRecorder
+) -> None:
+    """Regression test: the x-axis for monthly_sales_trend must be parsed as
+    dates before plotting, or matplotlib emits a 'categorical units' warning
+    and treats month labels as arbitrary, unordered categories."""
+    sql_file = tmp_path / "queries.sql"
+    sql_file.write_text(QUERIES_SQL)
+
+    run_queries(db_path, sql_file, tmp_path / "outputs")
+
+    categorical_warnings = [
+        w for w in recwarn.list if "categorical units" in str(w.message).lower()
+    ]
+    assert not categorical_warnings

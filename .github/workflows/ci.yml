@@ -27,5 +27,5 @@ jobs:
       - name: Mypy
         run: mypy
 
-      - name: Pytest
-        run: pytest
+      - name: Pytest (with coverage)
+        run: pytest --cov --cov-report=term-missing

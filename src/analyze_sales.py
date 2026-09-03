@@ -26,10 +26,19 @@ _NAME_RE = re.compile(r"^\s*--\s*name:\s*(\S+)\s*$", re.IGNORECASE)
 # Which output labels get a chart, and how to draw it. Keyed by the "-- name:"
 # label in queries.sql, NOT by statement position, so queries.sql can be
 # reordered or extended without silently mismatching charts to results.
-CHART_CONFIG: dict[str, tuple[str, str, str, str]] = {
-    # label: (chart_kind, x_column, y_column, title)
-    "revenue_by_region": ("bar", "region", "total_revenue", "Revenue by Region"),
-    "monthly_sales_trend": ("line", "month", "total_revenue", "Monthly Sales Trend"),
+# x_is_date: parse the x column as dates before plotting (chart only — the
+# CSV output keeps the original string column) so matplotlib plots a real
+# time axis instead of treating the labels as arbitrary categories.
+CHART_CONFIG: dict[str, tuple[str, str, str, str, bool]] = {
+    # label: (chart_kind, x_column, y_column, title, x_is_date)
+    "revenue_by_region": ("bar", "region", "total_revenue", "Revenue by Region", False),
+    "monthly_sales_trend": (
+        "line",
+        "month",
+        "total_revenue",
+        "Monthly Sales Trend",
+        True,
+    ),
 }
 
 
@@ -84,7 +93,7 @@ def run_queries(db_path: str | Path, sql_file: str | Path, outdir: str | Path) -
 
             if label not in CHART_CONFIG or df.empty:
                 continue
-            kind, x, y, title = CHART_CONFIG[label]
+            kind, x, y, title, x_is_date = CHART_CONFIG[label]
             if x not in df.columns or y not in df.columns:
                 logger.warning(
                     "Skipping chart for %s: expected columns %r/%r not in result %r",
@@ -94,8 +103,12 @@ def run_queries(db_path: str | Path, sql_file: str | Path, outdir: str | Path) -
                     list(df.columns),
                 )
                 continue
+            chart_df = df
+            if x_is_date:
+                chart_df = df.copy()
+                chart_df[x] = pd.to_datetime(chart_df[x])
             plot_fn = plot_bar if kind == "bar" else plot_line
-            plot_fn(df, x, y, title, charts / f"{label}.png")
+            plot_fn(chart_df, x, y, title, charts / f"{label}.png")
 
 
 def parse_args() -> argparse.Namespace:
