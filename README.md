@@ -1,6 +1,7 @@
 <div align="center">
 
 # Sales Insights with SQL and Python
+<img width="1672" height="941" alt="Sales-Insights-SQL" src="https://github.com/user-attachments/assets/facbcbdf-97f9-46a4-942f-c03f9097312d" />
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![pandas](https://img.shields.io/badge/pandas-CSV%20%2B%20SQL-orange)
